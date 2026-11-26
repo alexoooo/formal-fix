@@ -4,7 +4,7 @@ A Rust workspace for a stock exchange with a FIX interface. The initial executab
 
 | Crate | Responsibility |
 | --- | --- |
-| `matching` | Owns the order book and applies sequenced commands. Matching specifications and Verus proofs will live here alongside the implementation. |
+| `matching` | Implements price selection and its Verus specification. This crate will own the order book and apply sequenced commands. |
 | `fix` | Owns FIX messages, encoding, decoding, and session state. |
 | `exchange` | Runs the venue. This is where FIX requests will become sequenced matching commands and fills will become execution reports. |
 
@@ -24,4 +24,17 @@ cargo fmt --all --check
 
 ## Verification
 
-The initial workspace uses stable Rust. Verus setup and the first checked theorem are future work. The first proof target is venue-local price priority for a continuous limit order book. For each fill, the selected resting order must have the best eligible price in the book immediately before that fill.
+`matching::select_resting_order` takes the incoming side and limit in ticks, plus the opposing orders for one instrument. Verus proves that a returned index identifies a live, crossing order and that no eligible order in the slice has a better price. A buy selects the lowest eligible ask and a sell selects the highest eligible bid. Returning `None` proves that there is no eligible order. The scan accepts orders in any price order.
+
+The proof covers a single selection. A future fill path must supply the complete opposing book, execute at the selected order's price, and update quantities before selecting again.
+
+### Running the proof on Windows
+
+From a fresh checkout, install Rust `1.100.0-x86_64-pc-windows-msvc` with `rustup toolchain install 1.100.0-x86_64-pc-windows-msvc --profile minimal`. Download the `x86-win.zip` asset for the pinned Verus release and extract its `verus-x86-win` directory under `.tools` at the repository root. The matching manifest pins the corresponding `vstd` version. [Verus release 0.2026.11.22.1ce6a59](https://github.com/verus-lang/verus/releases/tag/release%2F0.2026.11.22.1ce6a59)
+
+In the RustRover PowerShell terminal at the workspace root, run
+
+```powershell
+$env:Path = (Resolve-Path .tools/verus-x86-win).Path + ';' + $env:Path
+cargo verus verify -p matching --locked
+```
