@@ -53,7 +53,8 @@ pub open spec fn eligible(side: Side, limit: u64, order: RestingOrder) -> bool {
     !order.is_empty() && price_at_least_as_good(side, order.price_ticks, limit)
 }
 
-/// A selection is optimal among the first `end` orders, or absent if none is eligible.
+/// Selects the earliest eligible index at the best price in the first `end` orders,
+/// or requires `None` if none is eligible.
 pub open spec fn best_in_prefix(
     side: Side, limit: u64, book: Seq<RestingOrder>, end: int, best: Option<usize>,
 ) -> bool {
@@ -65,6 +66,8 @@ pub open spec fn best_in_prefix(
             &&& eligible(side, limit, selected)
             &&& forall|j: int| 0 <= j < end && eligible(side, limit, #[trigger] book[j])
                 ==> price_at_least_as_good(side, selected.price_ticks, book[j].price_ticks)
+            &&& forall|j: int| 0 <= j < index && eligible(side, limit, #[trigger] book[j])
+                ==> book[j].price_ticks != selected.price_ticks
         },
     }
 }

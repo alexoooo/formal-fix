@@ -26,6 +26,8 @@ cargo fmt --all --check
 
 `matching::select_resting_order` takes the incoming side and limit in ticks, plus the opposing orders for one instrument. Verus proves that a returned index identifies a live, crossing order and that no eligible order in the slice has a better price. A buy selects the lowest eligible ask and a sell selects the highest eligible bid. Returning `None` proves that there is no eligible order. The scan accepts orders in any price order.
 
+Among eligible orders tied at the best price, Verus also proves that the selector returns the lowest index in the supplied slice. This gives arrival-time priority when the book presents equal-priced orders in arrival order.
+
 The proof covers a single selection. A future fill path must supply the complete opposing book, execute at the selected order's price, and update quantities before selecting again.
 
 ### Running the proof on Windows
