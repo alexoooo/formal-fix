@@ -22,6 +22,16 @@ cargo test --workspace
 cargo fmt --all --check
 ```
 
+## Benchmarking
+
+Run the optimized selector benchmark from the workspace root in the RustRover terminal.
+
+```sh
+cargo bench -p matching --bench select_resting_order --locked
+```
+
+The output gives timings per selection for buys and sells over 16, 256, and 4,096 resting orders. Each case repeatedly scans the same book with a mix of crossing prices, tied prices, and exhausted orders. Book construction happens before timing. To try another depth, edit `DEPTHS` in `crates/matching/benches/select_resting_order.rs`.
+
 ## Verification
 
 `matching::select_resting_order` takes the incoming side and limit in ticks, plus the opposing orders for one instrument. Verus proves that a returned index identifies a live, crossing order and that no eligible order in the slice has a better price. A buy selects the lowest eligible ask and a sell selects the highest eligible bid. Returning `None` proves that there is no eligible order. The scan accepts orders in any price order.

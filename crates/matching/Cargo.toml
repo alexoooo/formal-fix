@@ -8,5 +8,12 @@ publish.workspace = true
 [dependencies]
 vstd = "=0.0.0-2026-11-22-0344"
 
+[dev-dependencies]
+divan = "0.1"
+
+[[bench]]
+name = "select_resting_order"
+harness = false
+
 [package.metadata.verus]
 verify = true
