@@ -1,0 +1,10 @@
+[package]
+name = "exchange"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+fix = { path = "../fix" }
+matching = { path = "../matching" }
