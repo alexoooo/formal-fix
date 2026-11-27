@@ -1,10 +1,10 @@
 use std::hint::black_box;
 
 use divan::Bencher;
-use matching::{RestingOrder, Side, select_resting_order};
+use matching::{OrderId, PriceMicros, RestingOrder, Side, select_resting_order};
 
 const DEPTHS: &[usize] = &[16, 256, 4096];
-const LIMIT: u64 = 10_000;
+const LIMIT: PriceMicros = PriceMicros(10_000_000);
 
 fn main() {
     divan::main();
@@ -24,7 +24,8 @@ fn bench_selection(bencher: Bencher, side: Side, depth: usize) {
     // Cycle through 11 price levels around the limit, with every eighth order exhausted.
     let book: Vec<_> = (0..depth)
         .map(|i| RestingOrder {
-            price_ticks: LIMIT - 5 + (i * 7 % 11) as u64,
+            id: OrderId(i as u64),
+            price_micros: PriceMicros(LIMIT.0 - 5 + (i * 7 % 11) as u64),
             remaining: if i % 8 == 0 { 0 } else { 100 },
         })
         .collect();

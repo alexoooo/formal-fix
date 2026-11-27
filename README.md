@@ -4,7 +4,7 @@ A Rust workspace for a stock exchange with a FIX interface. The initial executab
 
 | Crate | Responsibility |
 | --- | --- |
-| `matching` | Implements price selection and its Verus specification. This crate will own the order book and apply sequenced commands. |
+| `matching` | Owns the single-instrument limit order book, selects resting orders, and returns trades. |
 | `fix` | Owns FIX messages, encoding, decoding, and session state. |
 | `exchange` | Runs the venue. This is where FIX requests will become sequenced matching commands and fills will become execution reports. |
 
@@ -34,11 +34,13 @@ The output gives timings per selection for buys and sells over 16, 256, and 4,09
 
 ## Verification
 
-`matching::select_resting_order` takes the incoming side and limit in ticks, plus the opposing orders for one instrument. Verus proves that a returned index identifies a live, crossing order and that no eligible order in the slice has a better price. A buy selects the lowest eligible ask and a sell selects the highest eligible bid. Returning `None` proves that there is no eligible order. The scan accepts orders in any price order.
+`matching::select_resting_order` takes the incoming side and limit in millionths of a US dollar (`PriceMicros(1_000_000)` is $1.00), plus the opposing orders for one instrument. Verus proves that a returned index identifies a live, crossing order and that no eligible order in the slice has a better price. A buy selects the lowest eligible ask and a sell selects the highest eligible bid. Returning `None` proves that there is no eligible order. The scan accepts orders in any price order.
 
 Among eligible orders tied at the best price, Verus also proves that the selector returns the lowest index in the supplied slice. This gives arrival-time priority when the book presents equal-priced orders in arrival order.
 
-The proof covers a single selection. A future fill path must supply the complete opposing book, execute at the selected order's price, and update quantities before selecting again.
+The price-priority proof covers a single selection. Order entry takes an `Order` with a caller-supplied `OrderId`. Each book remembers every ID it accepts, including after a full fill. Verus verifies that resubmitting an accepted ID returns an error. Trades identify both the resting and incoming orders.
+
+The `two_orders` integration tests cover trade price, quantity, order IDs, and duplicate rejection. Run them with `cargo test -p matching --test two_orders`.
 
 ### Running the proof on Windows
 
